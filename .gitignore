@@ -35,3 +35,4 @@
 
 # Autogenerator by cmake
 version.hpp
+uAuthenticator.hpp

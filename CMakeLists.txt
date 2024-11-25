@@ -66,6 +66,17 @@ if (${OpenLDAP_FOUND})
    set(HEADER_FILES ${HEADER_FILES} include/uAuthenticator/ldap.hpp)
 endif()
 
+# Write a convenience header
+set(CONVENIENCE_HEADER_FILE ${CMAKE_SOURCE_DIR}/include/uAuthenticator/uAuthenticator.hpp)
+file(WRITE ${CONVENIENCE_HEADER_FILE} "#ifndef UAUTHENTICATOR_UAUTHENTICATOR_HPP\n")
+file(APPEND ${CONVENIENCE_HEADER_FILE} "#define UAUTHENTICATOR_UAUTHENTICATOR_HPP\n")
+foreach(HEADER_FILE IN LISTS HEADER_FILES)
+  string(REPLACE "include/" "" HEADER_FILE "${HEADER_FILE}")
+  file(APPEND ${CONVENIENCE_HEADER_FILE} "#include <${HEADER_FILE}>\n")
+endforeach()
+file(APPEND ${CONVENIENCE_HEADER_FILE} "#endif\n")
+set(HEADER_FILES ${HEADER_FILES} include/uAuthenticator/uAuthenticator.hpp)
+
 add_library(uAuthenticator ${LIBRARY_SRC})
 set_target_properties(uAuthenticator PROPERTIES
                       CXX_STANDARD 20
@@ -79,7 +90,7 @@ target_link_libraries(uAuthenticator
 target_include_directories(uAuthenticator
                            PRIVATE $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
                            PRIVATE Boost::asio
-                           PUBLIC $<INSTALL_INTERFACE:${CMAKE_SOURCE_DIR}/include/uAuthenticator>)
+                           PUBLIC $<INSTALL_INTERFACE:include/uAuthenticator>)
 if (${OpenLDAP_FOUND})
    target_link_libraries(uAuthenticator PRIVATE ${OpenLDAP_LIBRARIES})
    target_include_directories(uAuthenticator
@@ -89,6 +100,7 @@ target_sources(uAuthenticator
                PUBLIC
                  FILE_SET api
                  TYPE HEADERS
+                 BASE_DIRS include
                  FILES ${HEADER_FILES})
  
 ##########################################################################################
@@ -97,22 +109,26 @@ target_sources(uAuthenticator
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 #set(cmakeModulesDir cmake)
-set(PROJECT_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR})
-set(PROJECT_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR})
+#set(PROJECT_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR})
+#set(PROJECT_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR})
 #export(TARGETS uAuthenticator NAMESPACE uAuthenticator:: FILE ${PROJECT_BINARY_DIR}/uAuthenticatorLibraryDepends.cmake)
-set(PROJECT_LIBRARIES uAuthenticator::uAuthenticator) 
+#set(PROJECT_LIBRARIES uAuthenticator::uAuthenticator) 
 configure_file(cmake/${PROJECT_NAME}Config.cmake.in ${PROJECT_NAME}Config.cmake @ONLY)
-configure_file(cmake/${PROJECT_NAME}ConfigVersion.cmake.in ${PROJECT_NAME}ConfigVersion.cmake @ONLY)
-#configure_package_config_file(
-#   cmake/${PROJECT_NAME}Config.cmake.in ${PROJECT_NAME}Config.cmake
-#   INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+#configure_file(cmake/${PROJECT_NAME}ConfigVersion.cmake.in ${PROJECT_NAME}ConfigVersion.cmake @ONLY)
+configure_package_config_file(
+   cmake/${PROJECT_NAME}Config.cmake.in ${PROJECT_NAME}Config.cmake
+   INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+write_basic_package_version_file(
+   ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+   VERSION ${uAuthenticator_VERSION_MAJOR}.${uAuthenticator_VERSION_MINOR}.${uAuthenticator_VERSION_PATCH}
+   COMPATIBILITY SameMinorVersion
+   ARCH_INDEPENDENT)
 #   PATH_VARS cmakeModulesDir
 #   NO_SET_AND_CHECK_MACRO
 #   NO_CHECK_REQUIRED_COMPONENTS_MACRO
 #)
 #write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}${PROJECT_NAME}Config.cmake" VERSION ${PROJECT_VERSION}
 #                                 COMPATIBILITY SameMinorVersion)
-
 install(TARGETS uAuthenticator
         EXPORT ${PROJECT_NAME}-targets
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -120,10 +136,14 @@ install(TARGETS uAuthenticator
         ARCHIVE  DESTINATION ${CMAKE_INSTALL_LIBDIR}
         FILE_SET api
         COMPONENT Runtime)
+install(EXPORT ${PROJECT_NAME}-targets
+        FILE ${PROJECT_NAME}Targets.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+       )
 install(FILES
         ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
         ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-        DESTINATION ${CMAKE_INSTALL_BINDIR}/cmake/${PROJECT_NAME}
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
         COMPONENT ...)
 
 ##########################################################################################

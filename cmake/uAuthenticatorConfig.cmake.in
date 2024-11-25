@@ -1,18 +1,34 @@
-# Tell the user project where to find our headers and libraries
+# uAuthenticator cmake module
+#
+# The following import targets are created
+#
+# ::
+#
+#   uAuthenticator-static
+#   uAuthenticator
+#
+# This module sets the following variables in your project::
+#
+#   uAuthenticator_FOUND - true if uAuthenticator found on the system
+#   uAuthenticator_INCLUDE_DIR - the directory containing uAuthenticator headers
+#   uAuthenticator_LIBRARY - 
+#   uAuthenticator_STATIC_LIBRARY
 
-set (uAuthenticator_VERSION "@PROJECT_VERSION@")
+@PACKAGE_INIT@
 
-set (uAuthenticator_INCLUDE_DIRS "@CMAKE_INSTALL_PREFIX@/@PROJECT_INSTALL_INCLUDEDIR@")
-set (uAuthenticator_LIBRARY_DIRS "@CMAKE_INSTALL_PREFIX@/@PROJECT_INSTALL_LIBDIR@")
+if(NOT TARGET uAuthenticator AND NOT TARGET uAuthenticator-static)
+  include("${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@Targets.cmake")
 
-# Allows loading uAuthenticator settings from another project
-set (uAuthenticator_CONFIG_FILE "${CMAKE_CURRENT_LIST_FILE}")
+  if (TARGET uAuthenticator)
+    get_target_property(@PROJECT_NAME@_INCLUDE_DIR uAuthenticator INTERFACE_INCLUDE_DIRECTORIES)
+  else ()
+    get_target_property(@PROJECT_NAME@_INCLUDE_DIR uAuthenticator-static INTERFACE_INCLUDE_DIRECTORIES)
+  endif()
 
-# List of compilation flags -DTOTO to export
-set (uAuthenticator_DEFINITIONS "@uAuthenticator_DEFINITIONS@")
-
-# Our library dependencies (contains definitions for IMPORTED targets)
-#include ("${CMAKE_CURRENT_LIST_DIR}/uAuthenticatorLibraryDepends.cmake")
-
-# These are IMPORTED targets created by uAuthenticatorLibraryDepends.cmake
-set (uAuthenticator_LIBRARIES "@PROJECT_LIBRARIES@")
+  if (TARGET uAuthenticator)
+    get_target_property(@PROJECT_NAME@_LIBRARY uAuthenticator LOCATION)
+  endif()
+  if (TARGET uAuthenticator-static)
+    get_target_property(@PROJECT_NAME@_STATIC_LIBRARY uAuthenticator-static LOCATION)
+  endif()
+endif()

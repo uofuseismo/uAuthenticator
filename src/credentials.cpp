@@ -17,6 +17,7 @@ class Credentials::CredentialsImpl
 public:
     std::string mUser;
     std::string mPassword;
+    std::string mToken;
     std::chrono::seconds mIssuedAt{::getNow()};
     std::chrono::seconds mExpiresAt{mIssuedAt
                                   + std::chrono::seconds {86400}};
@@ -102,6 +103,19 @@ void Credentials::setPermissions(const Permissions permissions) noexcept
 Permissions Credentials::getPermissions() const noexcept
 {
     return pImpl->mPermissions;
+}
+
+/// Token
+void Credentials::setToken(const std::string &token)
+{
+    pImpl->mToken = token;
+}
+
+std::optional<std::string> Credentials::getToken() const
+{
+    return !pImpl->mToken.empty() ?
+           std::optional<std::string> (pImpl->mToken) :
+           std::nullopt;
 }
 
 /// Valid periods
