@@ -43,7 +43,7 @@ FetchContent_MakeAvailable(Catch2)
 FetchContent_declare(
    jwt-cpp 
    GIT_REPOSITORY https://github.com/Thalhammer/jwt-cpp.git
-   GIT_TAG 08bcf77a687fb06e34138e9e9fa12a4ecbe12332 # v0.7.0 release
+   GIT_TAG e71e0c2d584baff06925bbb3aad683f677e4d498 # v0.7.1 release
    EXCLUDE_FROM_ALL
 )
 set(JWT_BUILD_EXAMPLES OFF CACHE BOOL "disable building examples" FORCE)

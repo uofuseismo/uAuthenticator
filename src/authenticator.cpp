@@ -242,7 +242,8 @@ std::optional<Credentials> IAuthenticator::authorize(
     catch (const std::exception &e) 
     {
         //spdlog::debug("Token malformed because " + std::string {e.what()});
-        throw std::invalid_argument("Malformed token");
+        throw std::invalid_argument("Malformed token has an "
+                                  + std::string {e.what()});
     }
     if (user.empty()){throw std::invalid_argument("User name is empty");}
  
