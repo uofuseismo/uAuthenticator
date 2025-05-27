@@ -47,12 +47,16 @@ public:
     /// @param[in] version               The LDAP version protocol.
     /// @param[in] issuer                The issuer that authorizes a user.
     ///                                  For example, this can be the utility and host.
+    /// @param[in] maintainConnection    If true this will maintain the connection.
+    ///                                  Otherwise, it will reconnect for every
+    ///                                  authentication.
     LDAP(const std::string &serverAddress,
          int port,
          const std::string &organizationalUnitName,
          const std::string &domainComponent,
          const Version version = Version::Three,
-         const std::string &issuer = "ldap");
+         const std::string &issuer = "ldap",
+         bool maintainConnection = true);
     /// @brief Constructs an LDAP authenticator with the given server
     ///        address and port.
     /// @param[in] serverAddress         The server address - e.g., ldaps://server.domain.com
@@ -66,13 +70,17 @@ public:
     ///                                  adjusted.
     /// @param[in] issuer                The issuer that authorizes a user.
     ///                                  For example, this can be the utility and host.
+    /// @param[in] maintainConnection    If true this will maintain the connection.
+    ///                                  Otherwise, it will reconnect for every
+    ///                                  authentication.
     LDAP(const std::string &serverAddress,
          int port,
          const std::string &organizationalUnitName,
          const std::string &domainComponent,
          const Version version,
          const TLSVerifyClient tlsVerifyClient,
-         const std::string &issuer = "ldap");
+         const std::string &issuer = "ldap",
+         bool maintainConnection = true);
     /// @result True indicates the LDAP authenticator is initialized.
     [[nodiscard]] bool isInitialized() const noexcept;
     /// @result Returns true if the user with the password was authenticated.

@@ -17,7 +17,8 @@ public:
              const int port,
              const std::string &organizationalUnitName,
              const std::string &domainComponent,
-             const UAuthenticator::LDAP::Version ldapVersion)
+             const UAuthenticator::LDAP::Version ldapVersion,
+             const bool maintainConnection)
     {
         if (serverAddress.empty())
         {
@@ -30,6 +31,7 @@ public:
         mServerAddress = serverAddress + ":" + std::to_string(port);
         mDNSuffix = organizationalUnitName + "," + domainComponent;
         mVersion = ldapVersion;
+        mMaintainConnection = maintainConnection;
     }
     ~LDAPImpl()
     {
@@ -100,6 +102,7 @@ public:
     std::string mDNSuffix;
     Version mVersion{Version::Three};
     bool mBound{false};
+    bool mMaintainConnection{true};
 };
 
 /// Construtor
@@ -108,30 +111,35 @@ UAuthenticator::LDAP::LDAP(const std::string &serverAddress,
                            const std::string &organizationalUnitName,
                            const std::string &domainComponent,
                            const UAuthenticator::LDAP::Version ldapVersion,
-                           const std::string &issuer) :
+                           const std::string &issuer,
+                           const bool maintainConnection) :
     pImpl(std::make_unique<LDAPImpl> (serverAddress,
                                       port,
                                       organizationalUnitName,
                                       domainComponent,
-                                      ldapVersion)),
+                                      ldapVersion,
+                                      maintainConnection)),
     IAuthenticator(issuer)
 {
     pImpl->initialize();
+    if (!pImpl->mMaintainConnection){pImpl->unbind();}
 }
  
 /// Constructor
 UAuthenticator::LDAP::LDAP(const std::string &serverAddress,
-                       const int port,
-                       const std::string &organizationalUnitName,
-                       const std::string &domainComponent,
-                       const UAuthenticator::LDAP::Version ldapVersion,
-                       const UAuthenticator::LDAP::TLSVerifyClient verify,
-                       const std::string &issuer) :
+                           const int port,
+                           const std::string &organizationalUnitName,
+                           const std::string &domainComponent,
+                           const UAuthenticator::LDAP::Version ldapVersion,
+                           const UAuthenticator::LDAP::TLSVerifyClient verify,
+                           const std::string &issuer,
+                           const bool maintainConnection) :
     pImpl(std::make_unique<LDAPImpl> (serverAddress,
                                       port,
                                       organizationalUnitName,
                                       domainComponent,
-                                      ldapVersion)),
+                                      ldapVersion,
+                                      maintainConnection)),
     IAuthenticator(issuer)
 { 
     constexpr int overwrite{1};
@@ -167,7 +175,8 @@ UAuthenticator::LDAP::LDAP(const std::string &serverAddress,
                "LDAP: Failed to update LDAPTLS_REQCERT to DEMAND");
         }
     }
-    pImpl->initialize();
+    pImpl->initialize(); // Always run this - basically a test run on startup
+    if (!pImpl->mMaintainConnection){pImpl->unbind();}
 }
 
 /// @result True indicates the LDAP authenticator is initialized.
@@ -187,6 +196,7 @@ UAuthenticator::LDAP::authenticate(
     {
         throw std::invalid_argument("User name must be specified");
     }
+    // Build up the credential for LDAP 
     auto temporaryPassword{password};
     struct berval *serverCredential{nullptr};
     auto dn = "uid=" + user + "," + pImpl->mDNSuffix;
@@ -194,21 +204,37 @@ UAuthenticator::LDAP::authenticate(
     struct berval credential;
     credential.bv_val = temporaryPassword.data();
     credential.bv_len = temporaryPassword.size();
+
+    // Verify my connection
+    if (!pImpl->mMaintainConnection)
+    {   
+        pImpl->initialize();
+    }   
+    if (!pImpl->mBound)
+    {   
+        throw std::runtime_error("No LDAP connection");
+    }   
+
+    // Authenticate this user
     auto returnCode
         = ldap_sasl_bind_s(pImpl->mLDAP, dn.c_str(),
                            LDAP_SASL_SIMPLE,
                            &credential, NULL, NULL, &serverCredential);
+    // Check the result
     if (returnCode != LDAP_SUCCESS)
     {
         if (returnCode != LDAP_INVALID_CREDENTIALS)
         {
             std::string error{ldap_err2string(returnCode)};
+            if (!pImpl->mMaintainConnection){pImpl->unbind();}
             throw std::runtime_error("Could not bind to SASL; failed with: "
                                    + error);
         }
+        if (!pImpl->mMaintainConnection){pImpl->unbind();}
         return IAuthenticator::ReturnCode::Denied;
         //spdlog::info("Rejected " + user);
     }
+    if (!pImpl->mMaintainConnection){pImpl->unbind();}
     // LDAP says the user is okay - now add the user
     try
     {
