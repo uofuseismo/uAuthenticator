@@ -20,9 +20,8 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON) 
 #find_package(spdlog REQUIRED)
-#find_package(Boost COMPONENTS program_options date_time iostreams system REQUIRED)
+find_package(Boost REQUIRED CONFIG) #program_options date_time iostreams system REQUIRED)
 find_package(Threads REQUIRED)
-find_package(Boost COMPONENTS system REQUIRED)
 if (${ENABLE_LDAP})
    find_package(OpenLDAP REQUIRED) 
 else()
@@ -92,9 +91,7 @@ target_include_directories(uAuthenticator
                            PRIVATE Boost::asio
                            PUBLIC $<INSTALL_INTERFACE:include/uAuthenticator>)
 if (${OpenLDAP_FOUND})
-   target_link_libraries(uAuthenticator PRIVATE ${OpenLDAP_LIBRARIES})
-   target_include_directories(uAuthenticator
-                              PRIVATE $<BUILD_INTERFACE:${OpenLDAP_INCLUDE_DIR}>)
+   target_link_libraries(uAuthenticator PRIVATE OpenLDAP::ldap OpenLDAP::lber)
 endif()
 target_sources(uAuthenticator
                PUBLIC
