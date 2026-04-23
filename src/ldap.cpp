@@ -61,7 +61,7 @@ public:
         //            + mServerAddress);
         if (ldap_initialize(&mLDAP, mServerAddress.c_str()) != LDAP_SUCCESS)
         {
-            mBound = true;
+            mBound = false;
             //spdlog::critical(
             //    "LDAPImpl::initialize: Failed to bind to LDAP server at: "
             //  + mServerAddress);
@@ -93,6 +93,7 @@ public:
             //return;
             throw std::runtime_error("Failed to set LDAP version");
         }
+        mBound = true;
     }
 
     ::LDAP *mLDAP{nullptr};
